@@ -49,9 +49,12 @@ makeConverter tyName ctor variableSpecs
       body <- [| $(pure $ ConE ctor) <$> $(pure bodyArgs) |]
       Just tcs <- lookupTypeName "AtomInfoTypeValue"
       tvN <- newName "pointer"
-      pure $
+      pure
         [ SigD convName (ForallT [PlainTV tvN] [AppT (ConT tcs) (VarT tvN)] (AppT (AppT ArrowT (VarT tvN)) (AppT (ConT ''IO) (ConT tyName))))
         , FunD convName [(Clause [VarP objName]) (NormalB body) []] ]
+  | otherwise =
+    -- Todo: just call the constructor w/o any arguments
+    undefined
 
 lookupHoppyType :: String -> Q Type
 lookupHoppyType = fmap (ConT . fromJust) . lookupTypeName
@@ -81,3 +84,5 @@ resolveType cppType baseExpr =
       let recordType =  ConT ''Float
       let readExp = baseExpr
       pure VariableTypeSpec {..}
+
+    _ -> fail $ "type not supported: " ++ show cppType
